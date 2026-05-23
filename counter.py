@@ -4,15 +4,15 @@ from collections import defaultdict
 
 class VehicleCounter:
     """
-    Подсчёт транспорта по уникальным трек-ID с жёсткими критериями.
+    Подсчёт транспорта по ID
 
-    Стратегия «зрелости» трека:
-    1. Трек должен просуществовать min_age кадров (стабильность)
+    Стратегия подсчета трека:
+    1. Трек должен просуществовать min_age кадров
     2. Трек должен пройти min_displacement пикселей (исключаем дрожание на месте)
     3. Трек должен иметь устойчивое направление (не менее direction_consistency% кадров
-       движения в одну сторону — фильтрует «метания» при перекрытиях)
+       движения в одну сторону — фильтруем "метания")
 
-    Трек считается ТОЛЬКО когда выполнены ВСЕ три условия.
+    считаем трек если все выполняется
     """
 
     def __init__(
@@ -40,36 +40,35 @@ class VehicleCounter:
         # Множество уже посчитанных ID
         self.counted_ids = set()
 
-        # Для анализа направления: храним «голоса» за направление покадрово
+        # Для анализа направления:
         self.track_direction_votes = defaultdict(list)
 
-        # Счётчики
         self.count_a = 0
         self.count_b = 0
 
-        # ID, посчитанные на текущем кадре (для визуализации)
         self.just_counted = set()
 
-    def _get_direction(self, history) -> str:
-        """
-        Определить направление движения по истории центров.
-        """
-        if len(history) < 2:
-            return 'A'
 
-        first = np.array(history[0])
-        last = np.array(history[-1])
-        delta = last - first
-
-        if self.direction_axis == 'x':
-            return 'A' if delta[0] > 0 else 'B'
-        elif self.direction_axis == 'y':
-            return 'A' if delta[1] > 0 else 'B'
-        elif self.direction_axis == 'diagonal':
-            proj = delta[0] - delta[1]
-            return 'A' if proj > 0 else 'B'
-
-        return 'A'
+    # def _get_direction(self, history) -> str:
+    #     """
+    #     Определить направление движения по истории центров.
+    #     """
+    #     if len(history) < 2:
+    #         return 'A'
+    #
+    #     first = np.array(history[0])
+    #     last = np.array(history[-1])
+    #     delta = last - first
+    #
+    #     if self.direction_axis == 'x':
+    #         return 'A' if delta[0] > 0 else 'B'
+    #     elif self.direction_axis == 'y':
+    #         return 'A' if delta[1] > 0 else 'B'
+    #     elif self.direction_axis == 'diagonal':
+    #         proj = delta[0] - delta[1]
+    #         return 'A' if proj > 0 else 'B'
+    #
+    #     return 'A'
 
     def _get_frame_direction(self, p1, p2) -> str:
         """
@@ -87,7 +86,7 @@ class VehicleCounter:
 
     def _compute_displacement(self, history) -> float:
         """
-        Вычислить чистое смещение от первой до последней точки (евклидово расстояние).
+        Вычислить чистое смещение от первой до последней точки (евклидово расстояние)
         """
         if len(history) < 2:
             return 0.0
@@ -97,8 +96,8 @@ class VehicleCounter:
 
     def _is_direction_consistent(self, direction_votes: list) -> bool:
         """
-        Проверить, что направление движения было устойчивым.
-        direction_votes: список 'A'/'B' для каждого кадра с движением.
+        Провереяем устойчивость направления.
+        direction_votes: список 'A'/'B' для каждого кадра с движением
         """
         if len(direction_votes) < self.min_movement_frames:
             return False
@@ -114,41 +113,42 @@ class VehicleCounter:
         return majority_ratio >= self.direction_consistency
 
     def _majority_direction(self, direction_votes: list) -> str:
-        """Вернуть преобладающее направление."""
+        """Направление"""
         count_a = direction_votes.count('A')
         count_b = direction_votes.count('B')
         return 'A' if count_a >= count_b else 'B'
 
     def _is_track_mature(self, track) -> bool:
         """
-        Проверить все критерии зрелости трека.
-        Возвращает True, если трек можно засчитывать.
+        Проверяем все критерии
+        True- засчитываем трек
         """
         tid = track.track_id
         history = list(track.history)
 
-        # Критерий 1: минимальный возраст
+        # минимальный возраст
         if len(history) < self.min_age:
             return False
 
-        # Критерий 2: минимальное смещение
+        # минимальное смещение
         displacement = self._compute_displacement(history)
         if displacement < self.min_displacement:
             return False
 
-        # Критерий 3: устойчивость направления
+        # устойчивость направления
         votes = self.track_direction_votes.get(tid, [])
         if not self._is_direction_consistent(votes):
             return False
 
         return True
 
-    def update(self, tracks: list) -> set:
+    def update(self, tracks: list,active_track_ids:set = None) -> set:
         """
-        Обновить счётчик и накопить статистику по направлениям.
+        Обновить счётчик и накопить статистику по направлениям
 
         Args:
             tracks: список Track объектов (все треки, включая неподтверждённые)
+            active_track_ids - id всех живых треков(для очистки )
 
         Returns:
             set: ID треков, посчитанных на этом кадре
@@ -184,7 +184,7 @@ class VehicleCounter:
             # Определяем итоговое направление по накопленным голосам
             direction = self._majority_direction(self.track_direction_votes[tid])
 
-            # Считаем!
+            # Засчитываем трек
             if direction == 'A':
                 self.count_a += 1
             else:
@@ -193,13 +193,22 @@ class VehicleCounter:
             self.counted_ids.add(tid)
             self.just_counted.add(tid)
 
-            # Очистка голосов для посчитанного трека (экономия памяти)
+            # Очищаем память для посчитаного трека
             if tid in self.track_direction_votes:
                 del self.track_direction_votes[tid]
 
             total = self.count_a + self.count_b
-            print(f"  🚗 ID:{tid} → {direction} | "
+            print(f"  ID:{tid} → {direction} | "
                   f"Total: {total} (A:{self.count_a} B:{self.count_b})")
+
+            if active_track_ids is not None:
+                dead_ids = [
+                    tid for tid in self.track_direction_votes
+                    if tid not in active_track_ids
+                ]
+                for tid in dead_ids:
+                    del self.track_direction_votes[tid]
+
 
         return self.just_counted
 
@@ -214,11 +223,11 @@ class VehicleCounter:
         total = self.count_a + self.count_b
         return [
             f"TOTAL: {total}",
-            f"A: {self.count_a}  B: {self.count_b}"
+            f"From us: {self.count_a}  To us : {self.count_b}"
         ]
 
     def reset(self):
-        """Сброс всех счётчиков и состояний."""
+        """Сброс всех состояний"""
         self.counted_ids.clear()
         self.track_direction_votes.clear()
         self.count_a = 0

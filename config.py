@@ -6,12 +6,17 @@ DEBUG  = False → CPU + только отображение
 """
 import os
 
-DEBUG = True
-
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+SAVE_VIDEO = os.getenv('SAVE_VIDEO', 'True').lower() == 'true'
 # ── Пути ──
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 VIDEO_PATH = os.path.join(PROJECT_ROOT, 'data', 'test_video.mp4')
-MODEL_PATH = os.path.join(PROJECT_ROOT, 'yolo26n.onnx')
+if DEBUG:
+    MODEL_PATH = 'yolo26n.pt'
+else:
+    MODEL_PATH = os.path.join(PROJECT_ROOT,'model', 'yolo26n.onnx')
+
+
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'output')
 # Создаем output директорию
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -27,4 +32,3 @@ MIN_HITS = 8
 
 # ── Классы ──
 CLASS_NAMES = {2: "car", 3: "moto", 5: "bus", 7: "truck"}
-DEBUG = True

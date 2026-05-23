@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  vehicle_counter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: vehicle_counter_app
+    # restart: unless-stopped  ← УБРАТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ
+    
+    volumes:
+      - ./data:/app/data
+      - ./model:/app/model
+      - ./output:/app/output
+      - ./logs:/app/logs
+    
+    environment:
+      - DEBUG=False
+      - SAVE_VIDEO=True
+      - PYTHONUNBUFFERED=1
+    
+    command: python main.py --no-display -v /app/data/test_video.mp4 -o /app/output/result.mp4
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -10,8 +10,6 @@ from lap import lapjv
 class KalmanTracker:
     """ 1 фильтр Калмана - 1 трек
 
-
-
     """
 
     def __init__(self, bbox_xyxy: np.ndarray):
@@ -275,9 +273,8 @@ class ByteTracker:
         # удаление мертвых треков
         self.tracks = [t for t in self.tracks   if t.time_since_update <= self.max_age]
 
-        # ===== ШАГ 5: Создать новые треки из несматченных ВЫСОКИХ детекций =====
+        # Создаем новые треки из несматченных ВЫСОКИХ детекций 
         # (только из высоких! низкие — ненадёжные, из них треки не создаём)
-        # Для каждой несматченной высокой детекции:
         for det_idx in unmatched_high_dets:
             det = high_dets[det_idx]
             new_track = Track(

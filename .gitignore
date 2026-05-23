@@ -38,6 +38,7 @@ data/*.mp4
 data/*.avi
 data/*.mov
 data/*.mkv
+!data/.gitkeep
 
 model/*.pt
 model/*.weights

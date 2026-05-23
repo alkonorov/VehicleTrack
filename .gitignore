@@ -34,10 +34,8 @@ wheels/
 
 
 # ДАННЫЕ (не коммичу в git, но монтирую в Docker)
-data/*.mp4
-data/*.avi
-data/*.mov
-data/*.mkv
+# Игнорируем содержимое data, но не саму папку и не .gitkeep
+data/*
 !data/.gitkeep
 
 model/*.pt

@@ -8,7 +8,7 @@ import os
 class VideoStream:
     def __init__(self,video_path):
         """
-        Инициализация воспроизведения видео
+        Инициализация воспроизведения
 
         Args:
             video_path: путь к видео
@@ -24,7 +24,7 @@ class VideoStream:
         self.isOpened = False
 
     def open_video(self):
-        """ Отрытие видео """
+        """ """
         self.cap = cv.VideoCapture(self.video_path)
 
         if not self.cap.isOpened():
@@ -75,7 +75,7 @@ class VideoStream:
         if self.cap:
             self.cap.release()
             self.isOpened = False
-            print('Ресурсы видео освобождены')
+
 
 
 
